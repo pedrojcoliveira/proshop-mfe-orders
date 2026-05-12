@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -16,9 +17,26 @@ import { addToCart, removeFromCart } from '../slices/cartSlice';
 const CartScreen = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [outOfStockIds, setOutOfStockIds] = useState([]);
 
   const cart = useSelector((state) => state.cart);
   const { cartItems } = cart;
+
+  // mfe-orders subscreve o Event Bus e bloqueia checkout se produto esgotado
+  // verifica também o localStorage ao montar para eventos que já ocorreram
+  useEffect(() => {
+    const outOfStock = JSON.parse(localStorage.getItem('outOfStock') || '[]');
+    if (outOfStock.length > 0) {
+      setOutOfStockIds(outOfStock.map((p) => p.productId));
+    }
+    const handleStockEmpty = (e) => {
+      setOutOfStockIds((prev) => [...prev, e.detail.productId]);
+    };
+    if (window.__eventBus) window.__eventBus.subscribe('stockEmpty', handleStockEmpty);
+    return () => {
+      if (window.__eventBus) window.__eventBus.unsubscribe('stockEmpty', handleStockEmpty);
+    };
+  }, []);
 
   const addToCartHandler = (product, qty) => {
     dispatch(addToCart({ ...product, qty }));
@@ -27,6 +45,8 @@ const CartScreen = () => {
   const removeFromCartHandler = (id) => {
     dispatch(removeFromCart(id));
   };
+
+  const hasOutOfStockItems = cartItems.some((item) => outOfStockIds.includes(item._id));
 
   const checkoutHandler = () => {
     navigate('/user/login?redirect=/orders/shipping');
@@ -91,11 +111,18 @@ const CartScreen = () => {
               </h2>
               ${cartItems.reduce((acc, item) => acc + item.qty * item.price, 0).toFixed(2)}
             </ListGroup.Item>
+            {hasOutOfStockItems && (
+              <ListGroup.Item>
+                <Message variant='danger'>
+                  Some product in your cart is out of stock. Please remove it before proceeding to checkout.
+                </Message>
+              </ListGroup.Item>
+            )}
             <ListGroup.Item>
               <Button
                 type='button'
                 className='btn-block'
-                disabled={cartItems.length === 0}
+                disabled={cartItems.length === 0 || hasOutOfStockItems}
                 onClick={checkoutHandler}
               >
                 Proceed To Checkout
