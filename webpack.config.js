@@ -47,6 +47,9 @@ module.exports = {
       filename: "remoteEntry.js",
       exposes: {
         "./OrdersApp": "./src/OrdersApp.js",
+        "./AddToCartButton": "./src/components/AddToCartButton.jsx",
+        "./CartBadge": "./src/components/CartBadge.jsx",
+        "./CartStore": "./src/store/cartStore.js",
       },
       shared: {
         react: { singleton: true, requiredVersion: false },

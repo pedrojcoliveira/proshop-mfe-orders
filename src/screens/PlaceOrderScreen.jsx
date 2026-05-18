@@ -2,16 +2,15 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Button, Row, Col, ListGroup, Image, Card } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import Message from '../components/Message';
 import CheckoutSteps from '../components/CheckoutSteps';
 import Loader from '../components/Loader';
 import { useCreateOrderMutation } from '../slices/ordersApiSlice';
-import { clearCartItems } from '../slices/cartSlice';
+import cartStore from '../store/cartStore';
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
-  const cart = useSelector((state) => state.cart);
+  const cart = cartStore.getState();
   const [createOrder, { isLoading, error }] = useCreateOrderMutation();
 
   useEffect(() => {
@@ -21,8 +20,6 @@ const PlaceOrderScreen = () => {
       navigate('/orders/payment');
     }
   }, [cart.paymentMethod, cart.shippingAddress.address, navigate]);
-
-  const dispatch = useDispatch();
 
   const placeOrderHandler = async () => {
     try {
@@ -35,7 +32,7 @@ const PlaceOrderScreen = () => {
         taxPrice: cart.taxPrice,
         totalPrice: cart.totalPrice,
       }).unwrap();
-      dispatch(clearCartItems());
+      cartStore.clear();
       navigate(`/orders/order/${res._id}`);
     } catch (err) {
       toast.error(err);
@@ -75,7 +72,7 @@ const PlaceOrderScreen = () => {
                           <Image src={item.image} alt={item.name} fluid rounded />
                         </Col>
                         <Col>
-                          <Link to={`/catalog/product/${item.product}`}>
+                          <Link to={`/catalog/product/${item._id}`}>
                             {item.name}
                           </Link>
                         </Col>

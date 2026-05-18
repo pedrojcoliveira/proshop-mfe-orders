@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Form, Button, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import FormContainer from '../components/FormContainer';
 import CheckoutSteps from '../components/CheckoutSteps';
-import { savePaymentMethod } from '../slices/cartSlice';
+import cartStore from '../store/cartStore';
 
 const PaymentScreen = () => {
   const navigate = useNavigate();
-  const cart = useSelector((state) => state.cart);
-  const { shippingAddress } = cart;
+  const { shippingAddress } = cartStore.getState();
+  const [paymentMethod, setPaymentMethod] = useState('PayPal');
 
   useEffect(() => {
     if (!shippingAddress.address) {
@@ -17,12 +16,9 @@ const PaymentScreen = () => {
     }
   }, [navigate, shippingAddress]);
 
-  const [paymentMethod, setPaymentMethod] = useState('PayPal');
-  const dispatch = useDispatch();
-
   const submitHandler = (e) => {
     e.preventDefault();
-    dispatch(savePaymentMethod(paymentMethod));
+    cartStore.savePaymentMethod(paymentMethod);
     navigate('/orders/placeorder');
   };
 

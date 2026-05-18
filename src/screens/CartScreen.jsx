@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   Row,
   Col,
@@ -12,39 +11,33 @@ import {
 } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
 import Message from '../components/Message';
-import { addToCart, removeFromCart } from '../slices/cartSlice';
+import cartStore from '../store/cartStore';
 
 const CartScreen = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const [cartItems, setCartItems] = useState(() => cartStore.getState().cartItems);
   const [outOfStockIds, setOutOfStockIds] = useState([]);
 
-  const cart = useSelector((state) => state.cart);
-  const { cartItems } = cart;
-
-  // mfe-orders subscreve o Event Bus e bloqueia checkout se produto esgotado
-  // verifica também o localStorage ao montar para eventos que já ocorreram
   useEffect(() => {
+    // Subscreve o CartStore — atualiza quando o carrinho muda
+    const unsubscribe = cartStore.subscribe((state) => {
+      setCartItems(state.cartItems);
+    });
+
+    // Event Bus — bloqueia checkout se produto esgotado
     const outOfStock = JSON.parse(localStorage.getItem('outOfStock') || '[]');
-    if (outOfStock.length > 0) {
-      setOutOfStockIds(outOfStock.map((p) => p.productId));
-    }
+    if (outOfStock.length > 0) setOutOfStockIds(outOfStock.map((p) => p.productId));
+
     const handleStockEmpty = (e) => {
       setOutOfStockIds((prev) => [...prev, e.detail.productId]);
     };
     if (window.__eventBus) window.__eventBus.subscribe('stockEmpty', handleStockEmpty);
+
     return () => {
+      unsubscribe();
       if (window.__eventBus) window.__eventBus.unsubscribe('stockEmpty', handleStockEmpty);
     };
   }, []);
-
-  const addToCartHandler = (product, qty) => {
-    dispatch(addToCart({ ...product, qty }));
-  };
-
-  const removeFromCartHandler = (id) => {
-    dispatch(removeFromCart(id));
-  };
 
   const hasOutOfStockItems = cartItems.some((item) => outOfStockIds.includes(item._id));
 
@@ -76,9 +69,7 @@ const CartScreen = () => {
                     <Form.Control
                       as='select'
                       value={item.qty}
-                      onChange={(e) =>
-                        addToCartHandler(item, Number(e.target.value))
-                      }
+                      onChange={(e) => cartStore.add(item, Number(e.target.value))}
                     >
                       {[...Array(item.countInStock).keys()].map((x) => (
                         <option key={x + 1} value={x + 1}>
@@ -91,7 +82,7 @@ const CartScreen = () => {
                     <Button
                       type='button'
                       variant='light'
-                      onClick={() => removeFromCartHandler(item._id)}
+                      onClick={() => cartStore.remove(item._id)}
                     >
                       <FaTrash />
                     </Button>
