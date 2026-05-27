@@ -33,6 +33,20 @@ const cartStore = (() => {
 
   const persist = () => localStorage.setItem('cart', JSON.stringify(state));
 
+  // Limpa o carrinho quando o utilizador faz logout
+  window.addEventListener('userChanged', (e) => {
+    if (!e.detail.userInfo) {
+      state = {
+        cartItems: [],
+        shippingAddress: {},
+        paymentMethod: 'PayPal',
+        ...calculatePrices([]),
+      };
+      localStorage.removeItem('cart');
+      notify();
+    }
+  });
+
   return {
     // Lê o estado atual
     getState: () => ({ ...state }),
@@ -91,5 +105,8 @@ const cartStore = (() => {
     },
   };
 })();
+
+// Exposição temporária para demonstração do singleton
+//window.__cartStore = cartStore;
 
 export default cartStore;

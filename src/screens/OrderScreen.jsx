@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Row, Col, ListGroup, Image, Card, Button } from 'react-bootstrap';
 import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js';
-import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import authService from 'mfeAuth/AuthService';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
 import {
@@ -19,7 +19,7 @@ const OrderScreen = () => {
   const { data: order, refetch, isLoading, error } = useGetOrderDetailsQuery(orderId);
   const [payOrder, { isLoading: loadingPay }] = usePayOrderMutation();
   const [deliverOrder, { isLoading: loadingDeliver }] = useDeliverOrderMutation();
-  const { userInfo } = useSelector((state) => state.auth);
+  const userInfo = authService.getUser();
   const [{ isPending }, paypalDispatch] = usePayPalScriptReducer();
   const { data: paypal, isLoading: loadingPayPal, error: errorPayPal } = useGetPaypalClientIdQuery();
 

@@ -24,10 +24,6 @@ const CartScreen = () => {
       setCartItems(state.cartItems);
     });
 
-    // Event Bus — bloqueia checkout se produto esgotado
-    const outOfStock = JSON.parse(localStorage.getItem('outOfStock') || '[]');
-    if (outOfStock.length > 0) setOutOfStockIds(outOfStock.map((p) => p.productId));
-
     const handleStockEmpty = (e) => {
       setOutOfStockIds((prev) => [...prev, e.detail.productId]);
     };

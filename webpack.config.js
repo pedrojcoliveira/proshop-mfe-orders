@@ -51,6 +51,9 @@ module.exports = {
         "./CartBadge": "./src/components/CartBadge.jsx",
         "./CartStore": "./src/store/cartStore.js",
       },
+      remotes: {
+        mfeAuth: "mfeAuth@http://localhost:4201/remoteEntry.js",
+      },
       shared: {
         react: { singleton: true, requiredVersion: false },
         "react-dom": { singleton: true, requiredVersion: false },
