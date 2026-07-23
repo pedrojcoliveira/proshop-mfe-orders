@@ -23,7 +23,7 @@ const CartBadge = ({ onClick }) => {
       <FaShoppingCart />
       Cart
       {count > 0 && (
-        <Badge pill bg="success" style={{ marginLeft: '5px' }}>
+        <Badge pill bg="success" data-testid="cart-badge" style={{ marginLeft: '5px' }}>
           {count}
         </Badge>
       )}

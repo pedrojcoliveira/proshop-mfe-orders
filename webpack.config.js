@@ -3,10 +3,12 @@ const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPl
 
 module.exports = {
   entry: "./src/index.js",
+  performance: { hints: false },
   devServer: {
     port: 4205,
     historyApiFallback: true,
     headers: { "Access-Control-Allow-Origin": "*" },
+    static: { directory: require('path').join(__dirname, 'public') },
     proxy: { '/api': 'http://localhost:5000' },
   },
   output: {
@@ -52,7 +54,31 @@ module.exports = {
         "./CartStore": "./src/store/cartStore.js",
       },
       remotes: {
-        mfeAuth: "mfeAuth@http://localhost:4201/remoteEntry.js",
+        mfeAuth: `promise new Promise((resolve) => {
+          if (window.location.port === '4205') {
+            const mock = {
+              isAuthenticated: () => !!localStorage.getItem('userInfo'),
+              getUser:   () => { try { return JSON.parse(localStorage.getItem('userInfo')); } catch(e) { return null; } },
+              isAdmin:   () => { try { return JSON.parse(localStorage.getItem('userInfo'))?.isAdmin === true; } catch(e) { return false; } },
+              setUser:   (data) => { localStorage.setItem('userInfo', JSON.stringify(data)); },
+              logout:    () => { localStorage.removeItem('userInfo'); localStorage.removeItem('cart'); },
+              subscribe: () => () => {},
+            };
+            resolve({ get: () => Promise.resolve(() => ({ __esModule: true, default: mock })), init: () => {} });
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'http://localhost:4201/remoteEntry.js';
+          script.onload = () => resolve({
+            get: (req) => window.mfeAuth.get(req),
+            init: (arg) => { try { window.mfeAuth.init(arg); } catch(e) {} },
+          });
+          script.onerror = () => resolve({
+            get: () => Promise.resolve(() => ({ __esModule: true, default: null })),
+            init: () => {},
+          });
+          document.head.appendChild(script);
+        })`,
       },
       shared: {
         react: { singleton: true, requiredVersion: false },

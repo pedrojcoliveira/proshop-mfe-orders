@@ -12,33 +12,29 @@ import {
 import { FaTrash } from 'react-icons/fa';
 import Message from '../components/Message';
 import cartStore from '../store/cartStore';
+import authService from 'mfeAuth/AuthService';
 
 const CartScreen = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState(() => cartStore.getState().cartItems);
-  const [outOfStockIds, setOutOfStockIds] = useState([]);
 
   useEffect(() => {
-    // Subscreve o CartStore — atualiza quando o carrinho muda
     const unsubscribe = cartStore.subscribe((state) => {
       setCartItems(state.cartItems);
     });
 
-    const handleStockEmpty = (e) => {
-      setOutOfStockIds((prev) => [...prev, e.detail.productId]);
-    };
-    if (window.__eventBus) window.__eventBus.subscribe('stockEmpty', handleStockEmpty);
-
-    return () => {
-      unsubscribe();
-      if (window.__eventBus) window.__eventBus.unsubscribe('stockEmpty', handleStockEmpty);
-    };
+    return unsubscribe;
   }, []);
 
-  const hasOutOfStockItems = cartItems.some((item) => outOfStockIds.includes(item._id));
-
   const checkoutHandler = () => {
-    navigate('/user/login?redirect=/orders/shipping');
+    if (authService.isAuthenticated()) {
+      // Already logged in — go straight to checkout
+      navigate('/orders/shipping');
+    } else {
+      // Cross-MFE navigation: must use full page redirect, not React Router,
+      // because /user/login belongs to mfe-auth (a different BrowserRouter scope)
+      window.location.href = '/user/login?redirect=/orders/shipping';
+    }
   };
 
   return (
@@ -98,18 +94,11 @@ const CartScreen = () => {
               </h2>
               ${cartItems.reduce((acc, item) => acc + item.qty * item.price, 0).toFixed(2)}
             </ListGroup.Item>
-            {hasOutOfStockItems && (
-              <ListGroup.Item>
-                <Message variant='danger'>
-                  Some product in your cart is out of stock. Please remove it before proceeding to checkout.
-                </Message>
-              </ListGroup.Item>
-            )}
             <ListGroup.Item>
               <Button
                 type='button'
                 className='btn-block'
-                disabled={cartItems.length === 0 || hasOutOfStockItems}
+                disabled={cartItems.length === 0}
                 onClick={checkoutHandler}
               >
                 Proceed To Checkout

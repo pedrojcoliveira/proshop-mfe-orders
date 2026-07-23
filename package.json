@@ -28,6 +28,7 @@
   },
   "scripts": {
     "start": "webpack serve --mode development",
+    "start:prod": "webpack serve --mode production",
     "build": "webpack --mode production"
   }
 }
